@@ -3,9 +3,6 @@
 using System.Collections;
 using aoc_dotnet;
 
-Console.WriteLine("Hello, World!");
-Console.WriteLine(args);
-
 var expectedArgs = new ArrayList()
 {
     new Option("year", "y", true, "2024"),
