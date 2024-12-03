@@ -24,7 +24,7 @@ public class Solver: SolverInterface
             return false;
         }
 
-        if (!Regex.IsMatch(input, "(aa|bb|cc|dd|ee|ff|gg|hh|jj|kk|ll|mm|nn|oo|pp|qq|rr|ss|tt|uu|vv|ww|xx|yy|zz)"))
+        if (!Regex.IsMatch(input, "(aa|bb|cc|dd|ee|ff|gg|hh|ii|jj|kk|ll|mm|nn|oo|pp|qq|rr|ss|tt|uu|vv|ww|xx|yy|zz)"))
         {
             return false;
         }
@@ -37,27 +37,20 @@ public class Solver: SolverInterface
         // It contains a pair of any two letters that appears at least twice in the string without overlapping, like xyxy (xy) or aabcdefgaa (aa), but not like aaa (aa, but it overlaps).
         // It contains at least one letter which repeats with exactly one letter between them, like xyx, abcdefeghi (efe), or even aaa.
         var chars = input.ToCharArray();
+       
         var hasRepeatedPair = false;
         var hasRepeatedLetter = false;
-        for (var i = 0; i < chars.Length; i++)
+        for (var i = 0; i < chars.Length - 1; i++)
         {
-            if (i + 2 < chars.Length && chars[i] == chars[i + 2])
+            var isRepeated = input[(i + 2)..].Contains("" + chars[i] + chars[i + 1]);
+            if (isRepeated)
+            {
+                hasRepeatedPair = true;
+            }
+
+            if (i < chars.Length - 2 && chars[i] == chars[i + 2])
             {
                 hasRepeatedLetter = true;
-            }
-
-            if (i + 4 < chars.Length)
-            {
-                var slice = input.Substring(i, 4);
-                if (slice[..2].Equals(slice[2..]))
-                {
-                    hasRepeatedPair = true;
-                }
-            }
-
-            if (hasRepeatedLetter && hasRepeatedPair)
-            {
-                break;
             }
         }
         return hasRepeatedLetter && hasRepeatedPair;
