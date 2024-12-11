@@ -1,7 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.Net;
-using System.Net.Http.Headers;
 using aoc_dotnet;
 using Microsoft.Extensions.Configuration;
 
