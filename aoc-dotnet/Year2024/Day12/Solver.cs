@@ -20,7 +20,6 @@ public class Solver: SolverInterface
 
     public string Part2(string[] input)
     {
-        // 897844 too low
         return "" + CountRegions(input).Select(r => r.area * r.corners).Sum();
     }
 
