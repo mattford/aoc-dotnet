@@ -1,5 +1,4 @@
-﻿using System.Net.Sockets;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace aoc_dotnet.Year2024.Day17;
 
@@ -8,57 +7,44 @@ public class Solver : SolverInterface
     public string Part1(string[] input)
     {
         var (registers, program) = ParseInput(input);
-        return QuickCompute(registers['A']);
+        return Compute(registers['A'], program);
     }
 
     public string Part2(string[] input)
     {
-        var (registers, program) = ParseInput(input);
-        var map = new Dictionary<string, int>();
-        var a = registers['A'];
+        var (_, program) = ParseInput(input);
+        var output = FindNext(0, program, 0);
 
-        // for (long i = 0; i < 8; i++)
-        // {
-        //     Console.WriteLine($"{i}: {QuickCompute(i)}");
-        // }
-        //
-        // for (int i = 28422061; i < 28422061 + 8; i++)
-        // {
-        //     Console.WriteLine($"{i}: {Compute(i, program)}");
-        //     map.TryAdd(Compute(i, program), i);
-        // }
-       
-        return "";
+        if (output == null)
+        {
+            throw new Exception("It's all gone wrong!");
+        }
+        return ""+output;
     }
 
-    private string QuickCompute(long a)
+    private long? FindNext(long output, int[] program, int counter)
     {
-        var outputs = new List<string>();
-
-        do
+        counter++;
+        var aim = string.Join(",", program.TakeLast(counter));
+        for (var j = 0; j <= 7; j++)
         {
-            Console.WriteLine($"A {a}");
-            var b = a % 8;
-            Console.WriteLine($"B {b}");
-            b ^= 1;
-            Console.WriteLine($"B {b}");
-            var c = (int)(a / Math.Pow(2, b)); // 49
-            Console.WriteLine($"C {c}");
-            b ^= 5; // 2
-            Console.WriteLine($"B {b}");
-            b ^= c; // 51
-            Console.WriteLine($"B {b}");
-            outputs.Add("" + b % 8);
-            Console.WriteLine($"B {b % 8}");
-            a /= 8;
-        } while (a > 0);
-        return string.Join(",", outputs);
+            var a = output + j;
+            if (Compute(a, program) != aim) continue;
+            if (counter == program.Length)
+            {
+                return a;
+            }
+            var thisPathResult = FindNext(a << 3, program, counter);
+            if (thisPathResult == null) continue;
+            return thisPathResult;
+        }
+        return null;
     }
 
     private string Compute(long aValue, int[] program)
     {
         long ip = 0;
-        var outputs = new List<int>();
+        var outputs = new List<long>();
         var registers = new Dictionary<char, long>
         {
             ['A'] = aValue,
@@ -85,7 +71,7 @@ public class Solver : SolverInterface
             {
                 case 0:
                     // The adv instruction (opcode 0) performs division. The numerator is the value in the A register. The denominator is found by raising 2 to the power of the instruction's combo operand. (So, an operand of 2 would divide A by 4 (2^2); an operand of 5 would divide A by 2^B.) The result of the division operation is truncated to an integer and then written to the A register.
-                    registers['A'] = (int)(registers['A'] / Math.Pow(2, operand));
+                    registers['A'] = (long)(registers['A'] / Math.Pow(2, operand));
                     break;
                 case 1:
                     // The bxl instruction (opcode 1) calculates the bitwise XOR of register B and the instruction's literal operand, then stores the result in register B
@@ -110,19 +96,17 @@ public class Solver : SolverInterface
                     break;
                 case 5:
                     // The out instruction (opcode 5) calculates the value of its combo operand modulo 8, then outputs that value. (If a program outputs multiple values, they are separated by commas.)
-                    outputs.Add((int)operand % 8);
+                    outputs.Add(operand % 8);
                     break;
                 case 6:
                     // The bdv instruction (opcode 6) works exactly like the adv instruction except that the result is stored in the B register. (The numerator is still read from the A register.)
-                    registers['B'] = (int)(registers['A'] / Math.Pow(2, operand));
+                    registers['B'] = (long)(registers['A'] / Math.Pow(2, operand));
                     break;
                 case 7:
                     // The cdv instruction (opcode 7) works exactly like the adv instruction except that the result is stored in the C register. (The numerator is still read from the A register.)
-                    registers['C'] = (int)(registers['A'] / Math.Pow(2, operand));
+                    registers['C'] = (long)(registers['A'] / Math.Pow(2, operand));
                     break;
             }
-            // Console.WriteLine($"IP: {ip}, {instruction} {operand} A: {registers['A']}, B: {registers['B']}, C: {registers['C']}");
-
             ip += 2;
         }
 
@@ -134,15 +118,10 @@ public class Solver : SolverInterface
         var matches = Regex.Matches(string.Join("\n", input), "([0-9-]+)").ToArray();
         // first 3 are registers, then its the company
         var registers = new Dictionary<char, int>();
-        var program = new List<int>();
         registers.Add('A', int.Parse(matches[0].Value));
         registers.Add('B', int.Parse(matches[1].Value));
         registers.Add('C', int.Parse(matches[2].Value));
-        foreach (var match in matches.Skip(3))
-        {
-            program.Add(int.Parse(match.Value));
-        }
 
-        return (registers, program.ToArray());
+        return (registers, matches.Skip(3).Select(match => int.Parse(match.Value)).ToArray());
     }
 }
