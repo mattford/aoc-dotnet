@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Numerics;
 
 namespace aoc_dotnet.Year2024.Day21;
@@ -6,7 +7,8 @@ namespace aoc_dotnet.Year2024.Day21;
 public class Keypad
 {
     private char _currentKey = 'A';
-    private readonly ImmutableDictionary<char, ImmutableDictionary<char, string[]>> _buttonMap;
+    private readonly ImmutableDictionary<char, ImmutableDictionary<char, string>> _buttonMap;
+    private readonly ConcurrentDictionary<(char, char, int), long> cache;
     public Keypad(string[] rows)
     {
         var map = (
@@ -17,72 +19,93 @@ public class Keypad
         ).ToImmutableDictionary();
         _buttonMap = (
             from x in map
-            select new KeyValuePair<char, ImmutableDictionary<char, string[]>>(x.Value, BuildMap(map, x.Key))
+            select new KeyValuePair<char, ImmutableDictionary<char, string>>(x.Value, BuildMap(map, x.Key))
         ).ToImmutableDictionary();
-        // foreach (var (btn, paths) in _buttonMap)
-        // {
-        //     Console.WriteLine(btn);
-        //     foreach (var path in paths)
-        //     {
-        //         Console.WriteLine($" - {path.Key} => {path.Value}");
-        //     }
-        // }
+        cache = new ConcurrentDictionary<(char, char, int), long>();
     }
 
-    public string[] GetCommandStrings(string command)
+    public long GetCommandLength(string command, int iterations)
+    {
+        if (iterations == 0)
+        {
+            return command.Length;
+        }
+
+        var length = 0L;
+        var current = 'A';
+        foreach (var c in command)
+        {
+            length += GetCommandLength(current, c, iterations);
+            current = c;
+        }
+        return length;
+    }
+
+    private long GetCommandLength(char current, char next, int iterations)
+    {
+        return cache.GetOrAdd((current, next, iterations), _ =>
+        {
+            var nextString = _buttonMap[current][next] + "A";
+            return GetCommandLength(nextString, iterations - 1);
+        });
+    }
+    
+    
+    public string GetCommandString(string command)
     {
         var chars = command.ToCharArray();
-        var commandStrings = new List<string> { "" };
+        var commandString = "";
         foreach (var commandChar in chars)
         {
-            var nextStrings = new List<string>();
-            if (commandChar != _currentKey)
-            {
-                foreach (var ch in _buttonMap[_currentKey][commandChar])
-                {
-                    nextStrings = nextStrings.Union(commandStrings.Select(x => x + ch + "A")).ToList();
-                }
-            }
-            else
-            {
-                nextStrings = commandStrings;
-            }
+            commandString += _buttonMap[_currentKey][commandChar] + "A";
             _currentKey = commandChar;
-            commandStrings = nextStrings;
-            
         }
         
         _currentKey = 'A';
-        var min = commandStrings.Min(x => x.Length);
-        return commandStrings.Distinct().Where(x => x.Length == min).ToArray();
+        return commandString;
     }
 
-    private ImmutableDictionary<char, string[]> BuildMap(ImmutableDictionary<Complex, char> map, Complex from)
+    private ImmutableDictionary<char, string> BuildMap(ImmutableDictionary<Complex, char> map, Complex origin)
     {
-        var paths = new Dictionary<char, string[]>();
+        var paths = new Dictionary<char, string>();
 
         foreach (var point in map)
         {
-            if (point.Key == from)
+            if (point.Key == origin)
             {
-                paths.TryAdd(point.Value, [""]);
+                paths.TryAdd(point.Value, "");
                 continue;
             }
-            var routes = new List<string>();
-            var horizontal = point.Key.Real - from.Real;
-            var vertical = point.Key.Imaginary - from.Imaginary;
-            var hString = new string(horizontal > 0 ? '>' : '<', (int)Math.Abs(horizontal));
-            var vString = new string(vertical > 0 ? 'v' : '^', (int)Math.Abs(vertical));
-            if (map.ContainsKey(from + horizontal))
+            
+            var route = "";
+            var from = origin;
+            while (from != point.Key)
             {
-                routes.Add(hString + vString);
-            }
-            if (map.ContainsKey(from + vertical * Complex.ImaginaryOne))
-            {
-                routes.Add(vString + hString);
+                var horizontal = point.Key.Real - from.Real;
+                var vertical = point.Key.Imaginary - from.Imaginary;
+                if (horizontal < 0 && map.ContainsKey(from + horizontal))
+                {
+                    // go left first
+                    route += new string('<', (int)Math.Abs(horizontal));
+                    from += horizontal;
+                    horizontal = 0;
+                }
+
+                if (vertical != 0 && map.ContainsKey(from + vertical * Complex.ImaginaryOne))
+                {
+                    // down now
+                    route += new string(vertical > 0 ? 'v' : '^', (int)Math.Abs(vertical));
+                    from += vertical * Complex.ImaginaryOne;
+                }
+
+                if (horizontal > 0 && map.ContainsKey(from + horizontal))
+                {
+                    route += new string('>', (int)Math.Abs(horizontal));
+                    from += horizontal;
+                }
             }
 
-            paths.TryAdd(point.Value, routes.Distinct().ToArray());
+            paths.TryAdd(point.Value, route);
         }
         
         return paths.ToImmutableDictionary();
