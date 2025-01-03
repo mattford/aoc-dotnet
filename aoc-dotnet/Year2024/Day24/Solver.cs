@@ -51,7 +51,7 @@ public class Solver: SolverInterface
         return [];
     }
 
-    private string? FindOutput(Instructions instructions, string a, string b, string op)
+    private string FindOutput(Instructions instructions, string a, string b, string op)
     {
         return instructions.FirstOrDefault(x => x.Item2 == op && x.Item1.Contains(a) && x.Item1.Contains(b)).Item3;
     }
