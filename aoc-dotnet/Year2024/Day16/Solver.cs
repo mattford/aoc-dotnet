@@ -25,7 +25,6 @@ public class Solver: SolverInterface
     {
         var (map, start, end) = GetMap(input);
         var (_, bestSpaces) = FindShortestPath(map, start, end);
-        // 9535 too high
         return "" + bestSpaces;
     }
 
