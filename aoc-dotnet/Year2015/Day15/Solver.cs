@@ -34,7 +34,7 @@ public class Solver: SolverInterface
         foreach (var ingredient in ingredients)
         {
             var nextIngredients = ingredients.Where(x => x != ingredient).ToArray();
-            for (var i = 1; i <= maxSpoons; i++)
+            for (var i = 0; i <= maxSpoons; i++)
             {
                 var nextValues = values.Select((v, j) => v + i * ingredient[j]).ToArray();
                 m = Math.Max(m, GetMaxScore(nextIngredients, maxSpoons - i, nextValues, limitCalories));
