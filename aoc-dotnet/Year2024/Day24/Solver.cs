@@ -40,7 +40,7 @@ public class Solver: SolverInterface
             }
 
             var carry = FindOutput(instructions, and1, and2, "OR");
-            if (xor2 != z)
+            if (xor2 != null && xor2 != z)
             {
                 return DoFix(Swap(instructions, z, xor2)).Concat([z, xor2]).ToList();
             }
