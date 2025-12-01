@@ -13,7 +13,7 @@ public class Solver: SolverInterface
             if (!int.TryParse(line[1..], out var c)) throw new Exception("Invalid number detected!");
             d += (v * c);
             d %= maxD;
-            if (d < 0) d = maxD + d;
+            if (d < 0) d += maxD;
             if (d == 0) a++;
         }
 
@@ -35,7 +35,7 @@ public class Solver: SolverInterface
             
             d += (v * c);
             d %= maxD;
-            if (d < 0) d = maxD + d;
+            if (d < 0) d += maxD;
         }
 
         return "" + a;
